@@ -1,0 +1,26 @@
+Suggested video flow:
+
+1. Introduce the project
+   - This is a terminal-based turn-based battle game written in C++.
+   - The player fights a set of enemies until one side wins.
+
+2. Build and run
+   - Show `make`
+   - Show `make run`
+   - Play one battle
+
+3. Valgrind
+   - Show `make valgrind`
+   - Point out that there are no memory leaks and no invalid reads/writes.
+
+4. Explain concepts
+   - Exceptions
+   - Class design with constructors/destructors
+   - Operator overloading in Stats
+   - Inheritance/polymorphism with Character, Player, Enemy
+   - STL containers: deque and map
+   - STL algorithms with lambdas: all_of and max_element
+
+5. External resources
+   - Mention any docs/forums/AI tools used
+   - State that no AI was used to create the video or concept demonstration
