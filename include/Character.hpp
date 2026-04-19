@@ -17,6 +17,7 @@ public:
     Stats getStats() const;
     bool isAlive() const;
     void takeDamage(int damage);
+    void heal(int amount);
 
     virtual int computeDamage() const = 0;
     virtual std::string getRole() const = 0;

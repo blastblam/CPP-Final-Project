@@ -5,9 +5,10 @@
 #include <limits>
 
 Battle::Battle(const Player& player)
-    : player(player) {
+    : player(player), healUsesLeft(2) {
     commands[1] = "Attack";
     commands[2] = "Inspect strongest living enemy";
+    commands[3] = "Heal (2 uses remaining)";
 }
 
 Battle::~Battle() = default;
@@ -68,6 +69,8 @@ int Battle::chooseEnemyTarget() const {
 
 void Battle::playerTurn() {
     int choice = 0;
+    commands[3] = "Heal (" + std::to_string(healUsesLeft) + " use" + (healUsesLeft == 1 ? "" : "s") + " remaining)";
+
     std::cout << "\nYour turn:\n";
     for (const auto& entry : commands) {
         std::cout << entry.first << ". " << entry.second << "\n";
@@ -98,6 +101,14 @@ void Battle::playerTurn() {
 
         std::cout << "Strongest enemy by combined stats: "
                   << (*strongest)->getName() << " -> " << (*strongest)->getStats() << "\n";
+    } else if (choice == 3) {
+        if (healUsesLeft <= 0) {
+            throw InvalidChoiceException("You have no heals remaining.");
+        }
+        player.heal(8);
+        --healUsesLeft;
+        std::cout << player.getName() << " heals for 8 HP. (" << healUsesLeft << " heal"
+                  << (healUsesLeft == 1 ? "" : "s") << " remaining)\n";
     } else {
         throw InvalidChoiceException("That menu option is invalid.");
     }

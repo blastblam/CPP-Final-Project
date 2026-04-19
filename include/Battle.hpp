@@ -15,6 +15,8 @@ private:
     std::deque<std::unique_ptr<Character>> enemies;
     std::map<int, std::string> commands;
 
+    int healUsesLeft;
+
     void printStatus() const;
     int chooseEnemyTarget() const;
     void playerTurn();

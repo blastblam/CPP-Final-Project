@@ -24,3 +24,7 @@ void Character::takeDamage(int damage) {
     }
     stats.setHp(newHp);
 }
+
+void Character::heal(int amount) {
+    stats.setHp(stats.getHp() + amount);
+}
