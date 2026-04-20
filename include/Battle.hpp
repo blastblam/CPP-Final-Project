@@ -16,12 +16,13 @@ private:
     std::map<int, std::string> commands;
 
     int healUsesLeft;
+    std::size_t currentEnemyIndex;
+    int defendTurnsLeft;
 
     void printStatus() const;
-    int chooseEnemyTarget() const;
     void playerTurn();
     void enemyTurn();
-    bool allEnemiesDefeated() const;
+    bool promptContinue() const;
     int calculateFinalDamage(const Character& attacker, const Character& defender) const;
 
 public:

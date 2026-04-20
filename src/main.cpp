@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Battle.hpp"
+#include "Dragon.hpp"
 #include "Enemy.hpp"
 #include "Player.hpp"
 #include "Stats.hpp"
@@ -15,9 +16,9 @@ int main() {
         // Enemies listed in ascending order of strength
         struct EnemyDef { const char* name; Stats stats; };
         std::vector<EnemyDef> roster = {
-            {"Slime",  Stats(18, 5, 1, 2)},
-            {"Goblin", Stats(22, 7, 2, 4)},
-            {"Orc",    Stats(30, 9, 3, 3)},
+            {"Slime",  Stats(25,  9, 2, 3)},
+            {"Goblin", Stats(35, 12, 3, 4)},
+            {"Orc",    Stats(55, 17, 6, 3)},
         };
 
         std::cout << "Welcome to the turn-based battle game.\n";
@@ -26,6 +27,9 @@ int main() {
             std::cout << i + 1 << ". " << roster[i].name
                       << " -> " << roster[i].stats << "\n";
         }
+        Dragon bossPreview;
+        std::cout << roster.size() + 1 << ". [BOSS] " << bossPreview.getName()
+                  << " -> " << bossPreview.getStats() << "\n";
 
         int pick = 0;
         while (true) {
@@ -36,18 +40,29 @@ int main() {
                 std::cout << "Invalid input. Please enter a number.\n";
                 continue;
             }
-            if (pick < 1 || static_cast<std::size_t>(pick) > roster.size()) {
-                std::cout << "Please choose a number between 1 and " << roster.size() << ".\n";
+            if (pick < 1 || static_cast<std::size_t>(pick) > roster.size() + 1) {
+                std::cout << "Please choose a number between 1 and " << roster.size() + 1 << ".\n";
                 continue;
             }
             break;
         }
 
-        const EnemyDef& chosen = roster[pick - 1];
-        std::cout << "\nYou chose to face the " << chosen.name << "!\n";
+        bool dragonPick = (static_cast<std::size_t>(pick) == roster.size() + 1);
+        std::size_t startIndex = dragonPick ? roster.size() : static_cast<std::size_t>(pick - 1);
+
+        if (dragonPick) {
+            std::cout << "\nYou chose to face the Dragon! Good luck...\n";
+        } else {
+            std::cout << "\nStarting from " << roster[startIndex].name << "!\n";
+        }
 
         Battle battle(hero);
-        battle.addEnemy(std::make_unique<Enemy>(chosen.name, chosen.stats));
+        // Add all enemies from chosen starting point onward
+        for (std::size_t i = startIndex; i < roster.size(); ++i) {
+            battle.addEnemy(std::make_unique<Enemy>(roster[i].name, roster[i].stats));
+        }
+        battle.addEnemy(std::make_unique<Dragon>());
+
         battle.run();
     } catch (const std::exception& ex) {
         std::cerr << "Fatal error: " << ex.what() << "\n";

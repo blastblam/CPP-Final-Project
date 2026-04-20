@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Character.hpp"
 
 Character::Character(const std::string& name, const Stats& stats)
@@ -26,5 +27,5 @@ void Character::takeDamage(int damage) {
 }
 
 void Character::heal(int amount) {
-    stats.setHp(stats.getHp() + amount);
+    stats.setHp(std::min(stats.getHp() + amount, stats.getMaxHp()));
 }

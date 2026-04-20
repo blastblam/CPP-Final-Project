@@ -5,9 +5,9 @@
 #include <limits>
 
 Battle::Battle(const Player& player)
-    : player(player), healUsesLeft(2) {
+    : player(player), healUsesLeft(2), currentEnemyIndex(0), defendTurnsLeft(0) {
     commands[1] = "Attack";
-    commands[2] = "Inspect strongest living enemy";
+    commands[2] = "Defend (doubles DEF for 3 turns)";
     commands[3] = "Heal (2 uses remaining)";
 }
 
@@ -20,10 +20,18 @@ void Battle::addEnemy(std::unique_ptr<Character> enemy) {
     enemies.push_back(std::move(enemy));
 }
 
-bool Battle::allEnemiesDefeated() const {
-    return std::all_of(enemies.begin(), enemies.end(), [](const std::unique_ptr<Character>& enemy) {
-        return !enemy->isAlive();
-    });
+bool Battle::promptContinue() const {
+    char ans = 0;
+    while (true) {
+        std::cout << "\nContinue to the next enemy? (y/n): ";
+        if (!(std::cin >> ans)) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
+        if (ans == 'y' || ans == 'Y') return true;
+        if (ans == 'n' || ans == 'N') return false;
+    }
 }
 
 int Battle::calculateFinalDamage(const Character& attacker, const Character& defender) const {
@@ -41,30 +49,14 @@ void Battle::printStatus() const {
                   << enemies[i]->getStats();
         if (!enemies[i]->isAlive()) {
             std::cout << " [DEFEATED]";
+        } else if (i == currentEnemyIndex) {
+            std::cout << " [CURRENT]";
+        } else {
+            std::cout << " [NEXT]";
         }
         std::cout << "\n";
     }
     std::cout << "=========================\n";
-}
-
-int Battle::chooseEnemyTarget() const {
-    int target = 0;
-    std::cout << "Choose enemy number to attack: ";
-    if (!(std::cin >> target)) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        throw InvalidChoiceException("Input was not a number.");
-    }
-
-    if (target < 1 || static_cast<std::size_t>(target) > enemies.size()) {
-        throw InvalidChoiceException("That enemy number does not exist.");
-    }
-
-    if (!enemies[target - 1]->isAlive()) {
-        throw BattleStateException("That enemy has already been defeated.");
-    }
-
-    return target - 1;
 }
 
 void Battle::playerTurn() {
@@ -84,44 +76,42 @@ void Battle::playerTurn() {
     }
 
     if (choice == 1) {
-        int targetIndex = chooseEnemyTarget();
-        int damage = calculateFinalDamage(player, *enemies[targetIndex]);
-        enemies[targetIndex]->takeDamage(damage);
-        std::cout << player.getName() << " hits " << enemies[targetIndex]->getName()
+        Character& target = *enemies[currentEnemyIndex];
+        int damage = calculateFinalDamage(player, target);
+        target.takeDamage(damage);
+        std::cout << player.getName() << " hits " << target.getName()
                   << " for " << damage << " damage.\n";
     } else if (choice == 2) {
-        auto strongest = std::max_element(enemies.begin(), enemies.end(),
-            [](const std::unique_ptr<Character>& left, const std::unique_ptr<Character>& right) {
-                return left->getStats() < right->getStats();
-            });
-
-        if (strongest == enemies.end()) {
-            throw BattleStateException("No enemies are loaded into the battle.");
-        }
-
-        std::cout << "Strongest enemy by combined stats: "
-                  << (*strongest)->getName() << " -> " << (*strongest)->getStats() << "\n";
+        defendTurnsLeft = 3;
+        std::cout << player.getName() << " takes a defensive stance! DEF doubled for 3 turns.\n";
     } else if (choice == 3) {
         if (healUsesLeft <= 0) {
             throw InvalidChoiceException("You have no heals remaining.");
         }
-        player.heal(8);
+        int healAmount = static_cast<int>(player.getStats().getMaxHp() * 0.33);
+        player.heal(healAmount);
         --healUsesLeft;
-        std::cout << player.getName() << " heals for 8 HP. (" << healUsesLeft << " heal"
-                  << (healUsesLeft == 1 ? "" : "s") << " remaining)\n";
+        std::cout << player.getName() << " heals for " << healAmount << " HP. ("
+                  << healUsesLeft << " heal" << (healUsesLeft == 1 ? "" : "s") << " remaining)\n";
     } else {
         throw InvalidChoiceException("That menu option is invalid.");
     }
 }
 
 void Battle::enemyTurn() {
-    for (const auto& enemy : enemies) {
-        if (!enemy->isAlive() || !player.isAlive()) {
-            continue;
-        }
-        int damage = calculateFinalDamage(*enemy, player);
-        player.takeDamage(damage);
-        std::cout << enemy->getName() << " attacks " << player.getName()
+    Character& enemy = *enemies[currentEnemyIndex];
+    int base = enemy.computeDamage();
+    bool defending = defendTurnsLeft > 0;
+    int defense = player.getStats().getDefense() * (defending ? 2 : 1);
+    int damage = std::max(1, base - defense);
+    player.takeDamage(damage);
+    if (defending) {
+        --defendTurnsLeft;
+        std::cout << enemy.getName() << " attacks " << player.getName()
+                  << " for " << damage << " damage (defended! " << defendTurnsLeft << " turn"
+                  << (defendTurnsLeft == 1 ? "" : "s") << " remaining).\n";
+    } else {
+        std::cout << enemy.getName() << " attacks " << player.getName()
                   << " for " << damage << " damage.\n";
     }
 }
@@ -131,27 +121,52 @@ void Battle::run() {
         throw BattleStateException("Cannot start a battle with no enemies.");
     }
 
-    while (player.isAlive() && !allEnemiesDefeated()) {
-        printStatus();
-        try {
-            playerTurn();
-        } catch (const InvalidChoiceException& ex) {
-            std::cout << "Invalid choice: " << ex.what() << "\n";
-        } catch (const BattleStateException& ex) {
-            std::cout << "Battle state error: " << ex.what() << "\n";
+    while (player.isAlive() && currentEnemyIndex < enemies.size()) {
+        // Fight the current enemy
+        while (player.isAlive() && enemies[currentEnemyIndex]->isAlive()) {
+            printStatus();
+            try {
+                playerTurn();
+            } catch (const InvalidChoiceException& ex) {
+                std::cout << "Invalid choice: " << ex.what() << "\n";
+            } catch (const BattleStateException& ex) {
+                std::cout << "Battle state error: " << ex.what() << "\n";
+            }
+
+            if (!enemies[currentEnemyIndex]->isAlive() || !player.isAlive()) break;
+            enemyTurn();
         }
 
-        if (allEnemiesDefeated() || !player.isAlive()) {
-            break;
+        if (!player.isAlive()) break;
+
+        std::cout << "\n" << enemies[currentEnemyIndex]->getName() << " has been defeated!\n";
+
+        if (enemies[currentEnemyIndex]->getRole() != "Boss") {
+            int oldHp  = player.getStats().getHp();
+            int oldAtk = player.getStats().getAttack();
+            int oldDef = player.getStats().getDefense();
+            player.gainStats(9, 2, 2, 70, 18, 8);
+            std::cout << "Victory bonus! HP fully restored."
+                      << "  HP: "  << oldHp  << " -> " << player.getStats().getHp()
+                      << "  ATK: " << oldAtk << " -> " << player.getStats().getAttack()
+                      << "  DEF: " << oldDef << " -> " << player.getStats().getDefense() << "\n";
         }
 
-        enemyTurn();
+        ++currentEnemyIndex;
+
+        if (currentEnemyIndex >= enemies.size()) break;
+
+        if (!promptContinue()) {
+            printStatus();
+            std::cout << "\nYou withdrew from battle.\n";
+            return;
+        }
     }
 
     printStatus();
-    if (player.isAlive()) {
-        std::cout << "\nYou won the battle.\n";
-    } else {
+    if (!player.isAlive()) {
         std::cout << "\nYou were defeated.\n";
+    } else {
+        std::cout << "\nYou defeated all enemies!\n";
     }
 }

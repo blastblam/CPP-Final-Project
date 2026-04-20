@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///wsl.localhost/Ubuntu-24.04/home/blast_blam/CPP-Final-Project/**)",
+      "Bash(wsl *)"
+    ]
+  }
+}
