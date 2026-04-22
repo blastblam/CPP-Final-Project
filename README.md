@@ -99,27 +99,7 @@ The `Stats` class overloads:
 - `std::all_of(...)` uses a lambda to check whether all enemies are defeated
 - `std::max_element(...)` uses a lambda to inspect the strongest enemy
 
-**Project perspective:**
-- This keeps the code shorter and more expressive than manual loops for those tasks
 
-## Good next upgrades if you want a stronger final project
-You can add any of these later:
-- more enemy types using derived classes
-- healing items
-- random critical hits
-- a save/load system
-- unit tests with CxxTest
-- debugger demo in VS Code
-- callgrind analysis
-
-## Suggested demo order for your presentation
-1. Show the folder structure
-2. Run `make`
-3. Run `make run`
-4. Play through one full battle
-5. Run `make valgrind`
-6. Explain the 6 concepts above
-7. End with external resources / AI-use statement
 
 ## External resources statement template
 You can say something like this in your presentation:
