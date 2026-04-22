@@ -18,32 +18,12 @@ This project is a terminal-based turn-based battle game designed to fit a typica
 - `src/main.cpp` - program entry point
 - `Makefile` - build/run/valgrind commands
 
-## How to build
-From the project folder:
-
-```bash
-make
-```
-
-## How to run
-```bash
-make run
-```
-
-You will see a menu like this during the game:
-- `1` = attack an enemy
-- `2` = inspect the strongest enemy
-
-## How to run with valgrind
-```bash
-make valgrind
-```
 
 If everything is correct, valgrind should report:
 - no invalid reads/writes
 - no definitely lost memory
 
-## The 6 assignment concepts this version demonstrates
+## The 6 c++ concepts
 
 ### 1. Throwing and catching at least two types of exception (C)
 **C++ perspective:**
@@ -100,8 +80,3 @@ The `Stats` class overloads:
 - `std::max_element(...)` uses a lambda to inspect the strongest enemy
 
 
-
-## External resources statement template
-You can say something like this in your presentation:
-
-> I used course materials, online references, and AI tools for brainstorming, debugging help, and syntax support. Any generated code still required review, adjustment, and testing before I used it. I did not use any LLM or AI resource to create my video or concept demonstrations.
